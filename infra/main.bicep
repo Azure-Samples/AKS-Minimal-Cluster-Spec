@@ -51,6 +51,18 @@ param enableWorkloadIdentity bool = false
 @description('Enable monitoring with Log Analytics (adds cost but provides observability)')
 param enableMonitoring bool = false
 
+@description('OS disk type: Ephemeral (cheaper, faster) or Managed (persistent)')
+@allowed([
+  'Ephemeral'
+  'Managed'
+])
+param osDiskType string = 'Ephemeral'
+
+@description('OS disk size in GB for managed disks (ignored for ephemeral)')
+@minValue(30)
+@maxValue(2048)
+param osDiskSizeGB int = 30
+
 // Variables for resource configuration
 var resourceToken = toLower(uniqueString(subscription().id, resourceGroup().id, environmentName))
 var tags = {
@@ -98,8 +110,14 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-01' = {
         type: 'VirtualMachineScaleSets'
         osType: 'Linux'
         osSKU: 'Ubuntu'
-        osDiskType: 'Managed'
-        osDiskSizeGB: 30 // Minimal OS disk size
+        osDiskType: osDiskType
+        
+        // OS Disk Size Configuration:
+        // - Ephemeral disks: Set to 0. This instructs Azure to automatically size the disk based on the VM's cache capacity,
+        //   which is determined by the VM size. This configuration optimizes for faster I/O and cost savings. Note that data is lost on VM restart.
+        // - Managed disks: Use the configurable osDiskSizeGB parameter (30-2048 GB) for persistent storage.
+        osDiskSizeGB: osDiskType == 'Ephemeral' ? 0 : osDiskSizeGB
+        
         maxPods: 30 // Reduced for minimal spec
         enableAutoScaling: false // Disabled for cost control
         enableNodePublicIP: false

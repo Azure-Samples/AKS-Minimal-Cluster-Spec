@@ -1,0 +1,100 @@
+name: Validate Templates
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/**'
+      - 'azure.yaml'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'infra/**'
+      - 'azure.yaml'
+      - '.github/workflows/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Infrastructure Templates
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Azure CLI
+      run: |
+        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+    - name: Detect changes
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          bicep:
+            - 'infra/**/*.bicep'
+            - 'infra/**/*.json'
+          config:
+            - 'azure.yaml'
+            - '.github/workflows/**'
+
+    - name: Validate Bicep templates
+      if: steps.changes.outputs.bicep == 'true'
+      run: |
+        echo "Validating Bicep templates..."
+        cd infra
+        # Syntax validation only (no Azure connection required)
+        az bicep build --file main.bicep --outfile /dev/null
+        echo "✅ Bicep template syntax is valid"
+
+    - name: Check file permissions and structure
+      run: |
+        echo "Checking repository structure..."
+
+        # Check required files exist
+        required_files=(
+          "README.md"
+          "infra/main.bicep"
+          "infra/main.parameters.json"
+          "azure.yaml"
+        )
+
+        for file in "${required_files[@]}"; do
+          if [ -f "$file" ]; then
+            echo "✅ $file exists"
+          else
+            echo "❌ Required file $file is missing"
+            exit 1
+          fi
+        done
+
+        echo "✅ Repository structure is valid"
+
+    - name: Validate azd configuration
+      if: steps.changes.outputs.config == 'true'
+      run: |
+        echo "Validating Azure Developer CLI configuration..."
+        if [ -f "azure.yaml" ]; then
+          # Basic YAML syntax check using built-in tools
+          if python -c "import yaml; yaml.safe_load(open('azure.yaml'))"; then
+            echo "✅ azure.yaml is valid YAML"
+          else
+            echo "❌ Invalid YAML syntax in azure.yaml"
+            exit 1
+          fi
+        else
+          echo "❌ azure.yaml file not found"
+          exit 1
+        fi
+
+    - name: Summary
+      run: |
+        echo "🎉 All validations passed!"
+        echo "Templates are ready for deployment."
+        echo ""
+        echo "To deploy this infrastructure:"
+        echo "1. Clone this repository"
+        echo "2. Install Azure CLI and Azure Developer CLI"
+        echo "3. Run: azd auth login"
+        echo "4. Run: azd up"

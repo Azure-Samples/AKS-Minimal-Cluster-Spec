@@ -28,6 +28,12 @@
     },
     "enableMonitoring": {
       "value": false
+    },
+    "osDiskType": {
+      "value": "Ephemeral"
+    },
+    "osDiskSizeGB": {
+      "value": 30
     }
   }
 }

@@ -8,19 +8,24 @@ This sample demonstrates how to deploy a truly minimal specification Azure Kuber
 
 This template creates the most minimal AKS cluster possible while maintaining basic functionality:
 
-- **Single node** with smallest available VM size  
-- **Free tier control plane** (no management fees)  
-- **Basic kubenet networking** (no Azure CNI charges)  
-- **Minimal add-ons** (optional monitoring and workload identity)  
-- **Cost-optimized settings** throughout  
+- **Single node** with smallest available VM size
+- **Free tier control plane** (no management fees)
+- **Basic kubenet networking** (no Azure CNI charges)
+- **Minimal add-ons** (optional monitoring and workload identity)
+- **Cost-optimized settings** throughout
 
 ## 💰 Cost Optimization
 
-- **Estimated monthly cost**: $70-90 USD (VM + storage only)
+- **Template default cost**: $45-55 USD/month (1 node, ephemeral disk, no monitoring)
+- **With monitoring enabled**: $65-75 USD/month
+- **Scaled for production**: $150-300 USD/month (3+ nodes, additional services)
 - **Free control plane**: No management fees
-- **Single node**: Minimal compute costs  
+- **Ephemeral disk**: 30-40% cheaper than managed disks
+- **Single node start**: Minimal compute costs, scale as needed
 - **Basic networking**: No premium networking charges
-- **Optional monitoring**: Can be disabled to save costs
+- **Optional monitoring**: Can be disabled to save $20-30/month
+
+📋 **[Feature Selection Guide](FEATURE-SELECTION-GUIDE.md)** - Detailed cost analysis and scaling guidance.
 
 ## 🚀 Quick Start
 
@@ -62,6 +67,10 @@ azd up
 | `nodeCount` | `1` | Number of nodes (1-3) |
 | `enableWorkloadIdentity` | `false` | Enable workload identity |
 | `enableMonitoring` | `false` | Enable Log Analytics monitoring |
+| `osDiskType` | `Ephemeral` | OS disk type (Ephemeral/Managed) |
+| `osDiskSizeGB` | `30` | OS disk size in GB (managed disks only) |
+
+📋 **[Feature Selection Guide](FEATURE-SELECTION-GUIDE.md)** - Detailed cost analysis and recommendations for each feature.
 
 ### Truly Minimal Configuration
 
@@ -71,6 +80,8 @@ For the absolute minimal cluster (lowest cost):
 {
   "enableWorkloadIdentity": false,
   "enableMonitoring": false,
+  "osDiskType": "Ephemeral",
+  "osDiskSizeGB": 30,
   "nodeCount": 1
 }
 ```
@@ -95,7 +106,7 @@ kubectl get pods
 ## 🔒 Security Features
 
 - ✅ **RBAC enabled** by default
-- ✅ **Managed identity** for secure authentication  
+- ✅ **Managed identity** for secure authentication
 - ✅ **Optional workload identity** for pod-level security
 - ⚠️ **Azure Policy** disabled (enable if compliance required)
 
@@ -117,7 +128,7 @@ kubectl get pods
 ### Explicitly Disabled
 
 - Azure Policy/Gatekeeper
-- Azure Key Vault Secrets Provider  
+- Azure Key Vault Secrets Provider
 - Auto-scaling (can be enabled later)
 - Premium networking features
 
